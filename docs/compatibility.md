@@ -7,7 +7,7 @@ The library uses standard Python packaging and is independent of VS Code,
 PyCharm, Jupyter, or another editor once the same interpreter/environment is
 selected.
 
-## Actually validated in private L1
+## Actually validated
 
 - Windows 11;
 - CPython 3.12.10;
@@ -18,15 +18,19 @@ selected.
 - isolated local wheel smoke tests.
 - portable asset and notebook JSON validation;
 - synthetic notebook execution in the existing local Jupyter environment.
+- private GitHub Actions run `38244877541` across Ubuntu, Windows, and macOS;
+- CPython 3.10, 3.11, 3.12, and 3.13 on each of those three runner families;
+- core-only smoke tests on Ubuntu, Windows, and macOS;
+- synthetic Jupyter notebook execution on Ubuntu with Python 3.12;
+- package build, metadata validation, Ruff, tests, and coverage on Ubuntu.
 
 The final validation report is the authority for completed checks. The
 presence of a CI matrix is preparation, not evidence that remote jobs ran.
 
-## Prepared but not yet executed
+## Not yet executed
 
-- Ubuntu and macOS;
-- Python 3.10, 3.11, and 3.13;
-- dependency-minimum and dependency-latest matrices;
+- dependency-minimum and dependency-latest matrices beyond the declared lower
+  bounds resolved by pip;
 - Conda and Google Colab runtime execution;
 - bit-for-bit container reproduction.
 
