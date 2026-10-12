@@ -1,0 +1,635 @@
+\documentclass[10pt,a4paper,oneside]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.2cm,headheight=20pt]{geometry}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\definecolor{navy}{HTML}{17365D}
+\definecolor{blue}{HTML}{1F5A94}
+\definecolor{ink}{HTML}{1F2933}
+\definecolor{muted}{HTML}{52606D}
+\definecolor{line}{HTML}{CBD5E1}
+\definecolor{pale}{HTML}{F2F6FA}
+\definecolor{codebg}{HTML}{F7F8FA}
+\definecolor{green}{HTML}{176B4D}
+\definecolor{amber}{HTML}{8A5A00}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue,
+  pdftitle={Reversede Technical Reference and Operating Guide},
+  pdfauthor={Guilherme Moura Fernandes}
+}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\titleformat{\section}{\Large\bfseries\color{navy}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{blue}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{ink}}{\thesubsubsection}{0.7em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small\textcolor{muted}{Reversede \textbar{} Technical Reference}}
+\rhead{\small\textcolor{muted}{v0.3.0.dev0}}
+\cfoot{\small\textcolor{muted}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{line}\leaders\hrule height \headrulewidth\hfill}}
+
+\lstdefinestyle{reversede}{
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{line},
+  framerule=0.4pt,
+  xleftmargin=5pt,
+  xrightmargin=5pt,
+  aboveskip=7pt,
+  belowskip=7pt,
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  numbers=left,
+  numberstyle=\tiny\color{muted},
+  numbersep=7pt
+}
+\lstset{style=reversede}
+
+\newcommand{\code}[1]{\texttt{\small\detokenize{#1}}}
+\newcommand{\note}[1]{\textcolor{blue}{\textbf{Note.} #1}}
+\newcommand{\warning}[1]{\textcolor{amber}{\textbf{Boundary.} #1}}
+\newcommand{\ok}[1]{\textcolor{green}{\textbf{Verified.} #1}}
+\newcommand{\labelrow}[2]{\textbf{#1} & #2\\}
+
+\begin{document}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{1.4cm}
+{\color{navy}\rule{\textwidth}{2pt}}\\[1.0cm]
+{\Huge\bfseries\color{navy} Reversede}\par
+\vspace{0.25cm}
+{\LARGE\bfseries Technical Reference and Operating Guide}\par
+\vspace{0.35cm}
+{\large A documentation reference for auditable DataFrame diagnostics and scikit-learn blueprints}\par
+\vspace{1.0cm}
+\begin{tabularx}{\textwidth}{>{\bfseries\color{muted}}p{4.2cm}X}
+Package distribution & \code{reversede-ai}\\
+Public import & \code{reversede}\\
+Current package version & \code{0.3.0.dev0}\\
+Python support & CPython 3.10-3.13\\
+Source policy & Private GitHub repository, access controlled by the owner\\
+Proposed author attribution & Guilherme Moura Fernandes\\
+Document status & Technical reference for the private development line\\
+Date & 12 October 2026
+\end{tabularx}
+\vfill
+\fcolorbox{navy}{pale}{\begin{minipage}{0.93\textwidth}
+\textbf{Scope.} This manual documents the public API, algorithmic logic, generated artifacts,
+portability model, and reproducibility boundaries of the current library. It is written as a
+reference document rather than as a research claim. Historical study results were produced with
+an earlier 0.2.0 line and are not automatically attributed to this release.
+\end{minipage}}
+\vfill
+{\color{navy}\rule{\textwidth}{2pt}}\\[0.35cm]
+\small\textcolor{muted}{Prepared from the private repository source and its versioned documentation.}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Executive summary}
+
+Reversede is a Python library that turns a pandas \code{DataFrame} into an auditable analysis
+surface: it profiles columns, resolves or questions a target, detects structural and data-quality
+stress, ranks candidate features, writes model-conditioned prescriptions, and emits an unfitted
+scikit-learn preprocessing blueprint. The central design choice is to expose evidence and uncertainty
+instead of hiding decisions inside a single opaque score.
+
+The library does not train an estimator, does not select a winning model, and does not establish
+causality, absence of leakage, or superiority over a baseline. A generated blueprint is source code
+that still needs to be reviewed, fitted on training folds, evaluated on held-out data, and adapted to
+the user's data contract.
+
+\subsection{How to read this reference}
+\begin{enumerate}
+  \item Start with Section~\ref{sec:contract} for the package contract and installation paths.
+  \item Use Sections~\ref{sec:algorithm}-\ref{sec:api} when implementing or reviewing code.
+  \item Use Sections~\ref{sec:repro}-\ref{sec:portability} when preparing a reproducible run.
+  \item Use the troubleshooting and glossary sections as an operational checklist.
+\end{enumerate}
+
+\section{Contract at a glance}\label{sec:contract}
+
+\begin{tabularx}{\textwidth}{>{\bfseries}p{4.1cm}X}
+\toprule
+Item & Contract\\
+\midrule
+Installable distribution & \code{reversede-ai}\\
+Import namespace & \code{from reversede import Reversede, ReversedeConfig}\\
+Runtime & Python 3.10 or newer; the maintained matrix covers 3.10, 3.11, 3.12, and 3.13\\
+Required dependencies & \code{numpy>=1.26}, \code{pandas>=2.1}\\
+Optional ML dependency & \code{scikit-learn>=1.4} via \code{[sklearn]} or \code{[ml]}\\
+Optional notebook dependency & \code{jupyterlab>=4}, \code{ipykernel>=6}, scikit-learn\\
+Primary input & A non-empty pandas \code{DataFrame}\\
+Primary output & Evidence-bearing object plus JSON-ready summary and source blueprint\\
+Mutation policy & The caller's DataFrame is not mutated; analysis works on a deep copy\\
+Distribution policy & The source repository is private; collaborators require explicit access\\
+\bottomrule
+\end{tabularx}
+
+\subsection{The smallest useful call}
+\begin{lstlisting}[language=Python]
+import pandas as pd
+from reversede import Reversede
+
+frame = pd.read_csv("data.csv")
+analysis = Reversede(frame, target="target", task="regression")
+print(analysis.summary())
+source = analysis.generate_blueprint("artifacts/preprocess.py")
+\end{lstlisting}
+
+The explicit target and task are recommended when the data contract is known. Inference remains
+available for exploratory work, but it reports confidence, candidates, and abstention signals.
+
+\section{Installation and access}
+
+The repository is private by design. A person may install or clone the project only after the owner
+has granted GitHub access. The following commands assume an authenticated Git client or a configured
+credential helper; no token is embedded in source, notebooks, or this manual.
+
+\subsection{Virtual environment and direct Git installation}
+\begin{lstlisting}[language=bash]
+python -m venv .venv
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+# macOS or Linux
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install "reversede-ai @ git+https://github.com/alemofer-hash/reversede-ai.git@v0.3.0-dev0"
+\end{lstlisting}
+
+The direct URL resolves a private Git ref. Plain \code{pip install reversede-ai} is not the selected
+distribution path for this private development line because it searches a package index rather than
+the controlled repository.
+
+\subsection{Extras}
+\begin{longtable}{>{\ttfamily}p{3.1cm}p{4.2cm}p{7.1cm}}
+\toprule
+Extra & Main packages & Intended use\\
+\midrule
+\endhead
+\code{sklearn}, \code{ml} & scikit-learn & Blueprint execution and preprocessing pipelines\\
+\code{profiling}, \code{report} & ydata-profiling, setuptools<81 & Optional HTML profile adapter\\
+\code{analysis} & matplotlib, scipy, seaborn, scikit-learn & Notebook analysis and visual diagnostics\\
+\code{notebook} & JupyterLab, ipykernel, scikit-learn & Jupyter, Colab, and notebook kernels\\
+\code{test} & pytest & Local test execution\\
+\code{dev} & build, pytest, pytest-cov, ruff, twine & Maintainer quality and packaging checks\\
+\bottomrule
+\end{longtable}
+
+\subsection{IDE and notebook setup}
+The same Python environment can be selected by VS Code, PyCharm, JupyterLab, or Anaconda. The
+repository includes an \code{environment.yml}, pinned requirement families, VS Code settings, a
+dev-container definition, and two synthetic notebooks. The reliable sequence is:
+
+\begin{enumerate}
+  \item create or select one environment;
+  \item install the private Git ref and the required extra;
+  \item register that environment as a Jupyter kernel;
+  \item run the import smoke check below before opening a long notebook.
+\end{enumerate}
+
+\begin{lstlisting}[language=Python]
+import sys
+import reversede
+
+print(sys.executable)
+print(reversede.__version__)
+\end{lstlisting}
+
+In Google Colab, the same authenticated Git URL can be used in a cell after access has been granted.
+Credentials must be supplied through the notebook runtime or a secret manager and must never be
+written into a committed cell.
+
+\section{Architecture and data flow}\label{sec:architecture}
+
+The public class is a thin orchestration boundary. Each internal module has one reviewable
+responsibility, and the intermediate structures are retained on the analysis object.
+
+\begin{center}
+\fcolorbox{navy}{pale}{\begin{minipage}{0.94\textwidth}
+\centering
+\textbf{DataFrame + target/task/config}\par\smallskip
+$\Downarrow$\par\smallskip
+\fbox{validate input} $\rightarrow$ \fbox{profile and practical types} $\rightarrow$
+\fbox{resolve target and task}\par\smallskip
+$\Downarrow$\par\smallskip
+\fbox{association and eligibility} $\rightarrow$ \fbox{stress diagnostics} $\rightarrow$
+\fbox{model-conditioned prescriptions}\par\smallskip
+$\Downarrow$\par\smallskip
+\fbox{ranked candidates + evidence + alerts + unfitted sklearn blueprint}
+\end{minipage}}
+\end{center}
+
+\begin{longtable}{>{\ttfamily}p{3.1cm}p{5.2cm}p{6.1cm}}
+\toprule
+Module & Responsibility & Review output\\
+\midrule
+\endhead
+\code{validation.py} & Validate arguments, shape, duplicate names, and target & Fail-fast errors with actionable messages\\
+\code{types.py} & Infer practical type and signals for IDs, text, dates, and numeric strings & Type evidence used by downstream decisions\\
+\code{target.py} & Resolve explicit or inferred target, confidence, margin, and abstention & Target source, confidence, candidates, alerts\\
+\code{association.py} & Compute Pearson/Spearman, eta squared, and Cramer V where valid & Comparable feature-target evidence\\
+\code{profile.py} & Build column profile and eligibility explanations & Profile and candidate rows\\
+\code{stress.py} & Detect missingness, infinities, outliers, scale, cardinality, dates, and collinearity & Stress records with severity and counts\\
+\code{prescriptions.py} & Convert evidence into model-conditioned recommendations & Action, rationale, affected models, confidence\\
+\code{blueprint.py} & Generate syntactically checked sklearn source without fitted global values & Reproducible preprocessing source\\
+\code{api.py} & Orchestrate the pipeline and persist reports & Stable public object and report files\\
+\bottomrule
+\end{longtable}
+
+\section{Algorithm and decision logic}\label{sec:algorithm}
+
+\subsection{End-to-end pseudocode}
+\begin{lstlisting}
+function REVERSEDE(data, target, task, config):
+    validate_dataframe_and_arguments(data, target, task, config)
+    working_copy <- deep_copy(data)
+    profile <- profile_all_columns(working_copy, config)
+
+    if target is explicit:
+        resolved_target <- validate_and_accept(target)
+        target_source <- "explicit"
+        target_confidence <- 1.0
+    else:
+        candidates <- score_target_candidates(profile, working_copy)
+        resolved_target, confidence <- infer_with_margin(candidates, config)
+        target_source <- "inferred" or "abstained"
+
+    if task is explicit:
+        resolved_task <- task
+        task_source <- "explicit"
+    else:
+        resolved_task <- resolve_task_from_target(profile, working_copy)
+        task_source <- "heuristic"
+
+    for feature in profile excluding resolved_target:
+        explain_eligibility(feature, config)
+        if target is reliable:
+            compute_compatible_association(feature, resolved_target, resolved_task)
+            compute_candidate_score(feature)
+        else:
+            compute_structural_priority_only(feature)
+
+    candidates <- rank_and_limit_features(config.max_features)
+    stress <- diagnose_stress(working_copy, profile, candidates, config)
+    prescriptions <- build_model_conditioned_prescriptions(profile, stress, resolved_task)
+    blueprint <- generate_unfitted_sklearn_source(profile, candidates, stress, config)
+    return evidence_object(profile, target, candidates, stress,
+                           prescriptions, blueprint, alerts)
+\end{lstlisting}
+
+\subsection{Target resolution}
+An explicit target is accepted only if it names an existing, non-degenerate column. Without one,
+the target resolver scores plausible columns and applies both a confidence threshold and a margin
+over the runner-up. If the margin is insufficient, the library abstains. This is deliberate: an
+incorrect target can make every downstream association look meaningful.
+
+\begin{center}
+\begin{tabular}{p{4.0cm}p{10.3cm}}
+\toprule
+State & Meaning\\
+\midrule
+Explicit & The caller owns the semantic decision; confidence is reported as 1.0 for provenance.\\
+Inferred & A heuristic candidate passed configured threshold and margin checks.\\
+Abstained & Evidence was insufficient or ambiguous; structural diagnostics remain available, but predictive importance is not claimed.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Feature eligibility and ranking}
+The candidate table distinguishes eligibility from usefulness. Identifier-like columns, constant
+columns, unsupported objects, and the resolved target receive reasons rather than silently entering
+the shortlist. When a target is reliable, numeric and categorical associations are calculated with
+compatible measures. When it is not, the library falls back to structural priority and labels it as
+such.
+
+Scores are heuristic ranking aids on a normalized scale. They are not probabilities, causal effects,
+feature importance from a fitted estimator, or guarantees of generalization.
+
+\subsection{Stress and prescriptions}
+Stress diagnostics quantify the conditions that can break a downstream model: missing and infinite
+values, near constants, outliers, scale imbalance, high cardinality, rare categories, date-like
+columns, and correlated numeric pairs. A prescription keeps the evidence, proposed action, affected
+model families, and confidence together. The user can therefore reject or revise a prescription
+without losing the observation that caused it.
+
+\section{Public API}\label{sec:api}
+
+\subsection{Constructor}
+\begin{lstlisting}[language=Python]
+Reversede(
+    data: pandas.DataFrame,
+    target: str | None = None,
+    task: str = "auto",
+    config: ReversedeConfig | None = None,
+)
+\end{lstlisting}
+
+The constructor performs validation, profiling, target/task resolution, candidate analysis, stress
+diagnostics, and prescription generation. It does not fit a model. The input frame is copied before
+analysis; the original object remains under caller control.
+
+\subsection{Methods}
+\begin{longtable}{>{\ttfamily}p{5.4cm}p{8.8cm}}
+\toprule
+Method & Behavior\\
+\midrule
+\endhead
+\code{generate_blueprint(path=None, print_code=False) -> str} & Return a checked sklearn preprocessing source string. If \code{path} is given, persist the source; if \code{print_code} is true, also print it. No estimator is selected or trained.\\
+\code{summary() -> dict[str, Any]} & Return JSON-ready, evidence-bearing state for reports, review, or a notebook cell.\\
+\code{save_report(directory) -> dict[str, str]} & Write CSV/JSON summaries and the generated blueprint under the requested directory and return their paths.\\
+\bottomrule
+\end{longtable}
+
+\subsection{Stable fields}
+\begin{tabularx}{\textwidth}{>{\ttfamily}p{4.2cm}X}
+\toprule
+Field & Interpretation\\
+\midrule
+\code{target_}, \code{target_source_}, \code{target_confidence_}, \code{target_candidates_} & Resolved target and the evidence path that produced it.\\
+\code{task_}, \code{task_source_} & Regression/classification decision and whether it was explicit or heuristic.\\
+\code{profile_} & Per-column types, counts, missingness, cardinality, and signals.\\
+\code{candidates_} & Eligibility, associations, structural priority, and shortlist scores.\\
+\code{stress_} & Stress diagnostics with values, thresholds, severity, and affected features.\\
+\code{prescriptions_} & Conditional recommendations with rationale and model families.\\
+\code{alerts_} & Warnings for ambiguity, leakage risk, unsupported shape, or review conditions.\\
+\code{selected_features_} & The final shortlist after configured limits and exclusions.\\
+\bottomrule
+\end{tabularx}
+
+\section{Parameterization and configuration}
+
+\code{ReversedeConfig} is a frozen dataclass. Its values are part of the analysis contract and are
+propagated into the generated blueprint where applicable.
+
+\begin{longtable}{>{\ttfamily}p{4.3cm}p{2.1cm}p{7.8cm}}
+\toprule
+Parameter & Default & Effect and review question\\
+\midrule
+\endhead
+\code{max_features} & 20 & Maximum shortlist size. Is the downstream model allowed to see more or fewer columns?\\
+\code{max_categorical_levels} & 50 & Upper bound used by categorical blueprint handling. Does the chosen bound fit memory and business semantics?\\
+\code{high_cardinality_levels} & 25 & Warning boundary for categorical cardinality. Is the column an ID, a real category, or a text field?\\
+\code{near_constant_threshold} & 0.995 & Dominant-value fraction that triggers a near-constant warning.\\
+\code{id_unique_fraction} & 0.98 & Uniqueness fraction that signals a likely identifier.\\
+\code{target_confidence_threshold} & 0.88 & Minimum confidence for accepting an inferred target.\\
+\code{target_margin} & 0.08 & Required gap between the best and second target candidate.\\
+\code{rare_category_fraction} & 0.01 & Frequency boundary for rare-category warnings and prescriptions.\\
+\code{outlier_fraction_threshold} & 0.05 & Fraction of observations above the outlier diagnostic boundary.\\
+\code{include_columns} & \code{()} & Explicitly include columns otherwise excluded; the reason remains visible.\\
+\code{exclude_columns} & \code{()} & Explicitly exclude columns from the shortlist and blueprint.\\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[language=Python]
+from reversede import Reversede, ReversedeConfig
+
+config = ReversedeConfig(
+    max_features=30,
+    include_columns=("business_signal",),
+    exclude_columns=("record_id",),
+)
+analysis = Reversede(frame, target="target", task="classification", config=config)
+config.validate()
+\end{lstlisting}
+
+Invalid ranges are rejected by \code{validate()}. Explicit inclusions remain auditable rather than
+being converted into an unmarked override.
+
+\section{Generated blueprint and pseudocode for use}
+
+\subsection{What the blueprint contains}
+The generated source is designed to be a readable preprocessing starting point. Depending on column
+signals, it may include numeric imputation and scaling, conversion of numeric strings, categorical
+imputation and one-hot encoding, and datetime handling. Categorical limits and frequency thresholds
+come from the configuration. The output is intentionally unfit: it contains transformer definitions,
+not learned medians, means, category vocabularies, or a fitted model.
+
+\begin{lstlisting}[language=Python]
+blueprint = analysis.generate_blueprint(
+    path="artifacts/reversede_preprocessing.py",
+    print_code=False,
+)
+\end{lstlisting}
+
+\subsection{Fit only inside the training boundary}
+\begin{lstlisting}[language=Python]
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+
+train, test = train_test_split(frame, test_size=0.2, random_state=42)
+# Import or adapt the generated preprocessing source here.
+preprocessor = build_preprocessor_from_blueprint(train)
+model = Pipeline([
+    ("preprocess", preprocessor),
+    ("estimator", LogisticRegression(max_iter=1000)),
+])
+model.fit(train.drop(columns="target"), train["target"])
+score = model.score(test.drop(columns="target"), test["target"])
+\end{lstlisting}
+
+This pattern prevents test-set statistics from leaking into preprocessing. The blueprint does not
+prove that the eventual training code follows this rule; the experiment owner remains responsible.
+
+\subsection{Optional profiling adapter}
+\begin{lstlisting}[language=Python]
+from reversede.integrations.profiling import profile_with_ydata
+
+report = profile_with_ydata(frame, "artifacts/profile.html", minimal=True)
+\end{lstlisting}
+
+The adapter is optional and raises an actionable \code{ImportError} when its extra is absent.
+
+\section{Report and output schemas}
+
+\subsection{Summary shape}
+The exact internal dictionaries may grow, but the following conceptual shape is stable and intended
+for JSON serialization:
+
+\begin{lstlisting}
+{
+  "version": "0.3.0.dev0",
+  "target": {"name": "target", "source": "explicit", "confidence": 1.0},
+  "task": {"name": "regression", "source": "explicit"},
+  "profile": [...],
+  "candidates": [...],
+  "stress": [...],
+  "prescriptions": [...],
+  "alerts": [...],
+  "selected_features": [...]
+}
+\end{lstlisting}
+
+\subsection{Persisted report}
+\code{save_report(directory)} returns a dictionary of paths for the serialized summary, tabular
+candidate/stress artifacts, and the blueprint source. Treat these files as analysis outputs tied to
+the input data, configuration, package version, and Python environment. A report is not a substitute
+for a dataset manifest or a model evaluation record.
+
+\section{Legacy adapter and migration}
+
+The historical namespace \code{reverseda_ai} remains as a narrow adapter for 0.1.x callers. Its
+\code{ReversedaAutonoma} class emits a \code{DeprecationWarning}. New code should use the English
+namespace and methods.
+
+\begin{longtable}{>{\ttfamily}p{5.2cm}>{\ttfamily}p{5.2cm}p{4.0cm}}
+\toprule
+Legacy & Current & Migration note\\
+\midrule
+\endhead
+\code{reverseda_ai} & \code{reversede} & Import the public namespace.\\
+\code{ReversedaAutonoma} & \code{Reversede} & Construct the new class directly.\\
+\code{requisitos_} & \code{candidates_} & Use the richer, serializable candidate surface.\\
+\code{estresse_} & \code{stress_} & Includes additional diagnostics and evidence.\\
+\code{gerar_blueprint_extrator()} & \code{generate_blueprint()} & English name and explicit persistence controls.\\
+\code{resumo()} & \code{summary()} & JSON-ready report surface.\\
+\bottomrule
+\end{longtable}
+
+\section{Reproducibility, provenance, and security}\label{sec:repro}
+
+\subsection{Minimum reproducibility record}
+For a repeatable run, store the following beside the report:
+\begin{itemize}
+  \item package version and Git ref;
+  \item Python executable and operating system;
+  \item dependency lock or requirement file;
+  \item configuration values and explicit target/task;
+  \item dataset provenance, schema, row/column counts, and a content hash where permitted;
+  \item command or notebook cell used to create the report;
+  \item blueprint source and the downstream estimator/evaluation protocol.
+\end{itemize}
+
+\subsection{Private repository policy}
+The GitHub repository \code{alemofer-hash/reversede-ai} is private. Access is granted by the owner
+to selected collaborators. A private repository is an access control boundary, not proof of authorship,
+license clearance, or data provenance. Before sharing a clone or an artifact, review:
+
+\begin{enumerate}
+  \item authorship and contribution records;
+  \item licenses and notices for third-party dependencies and copied material;
+  \item notebooks, PDFs, datasets, personal paths, and generated outputs;
+  \item secrets, tokens, certificates, and local configuration;
+  \item the intended audience and the minimum GitHub permission needed.
+\end{enumerate}
+
+\warning{Public release of code, notebooks, article, data, or descriptions of use is user-controlled
+and outside this document's automatic workflow.}
+
+\subsection{Scientific boundaries}
+The library reports warnings and recommendations. It does not turn a finite diagnostic into a proof,
+does not establish causal interpretation, and does not claim that one model family is superior.
+The historical study used Reversede 0.2.0; this 0.3.0.dev0 reference documents a newer library line,
+and the study was not rerun merely by publishing this manual.
+
+\section{Portability matrix}\label{sec:portability}
+
+\begin{longtable}{p{3.1cm}p{4.1cm}p{7.2cm}}
+\toprule
+Environment & Supported route & Operational note\\
+\midrule
+\endhead
+VS Code & Select the project virtualenv or dev container & The repository includes editor settings and a container definition.\\
+PyCharm & Configure an existing virtualenv or Conda interpreter & Run the import smoke check from the configured interpreter.\\
+JupyterLab & Install \code{reversede-ai[notebook]} & Register and select the same environment as the kernel.\\
+Anaconda & Use \code{environment.yml} or a Conda env plus pip Git install & Keep one authoritative interpreter for notebook and terminal.\\
+Google Colab & Authenticated Git install in a cell & Use runtime secrets; never hard-code a private token.\\
+CI & Matrix on Windows, Linux, macOS and Python 3.10-3.13 & Core, quality/build, and notebook smoke jobs are separated.\\
+\bottomrule
+\end{longtable}
+
+\section{Verification evidence}
+
+The private development line has a verification workflow proportionate to the library's scope:
+\begin{itemize}
+  \item unit test suite: 23 tests passed in the prepared local environment;
+  \item local coverage measurement: 92 percent in the recorded run;
+  \item Ruff quality checks passed;
+  \item wheel and source distribution built and installed in an isolated target;
+  \item synthetic notebooks executed after correcting a kernel-name mismatch and a notebook column reference;
+  \item CI tag run passed across its configured matrix at the private GitHub repository.
+\end{itemize}
+
+These are software verification facts for the recorded environment. They are not evidence of
+scientific superiority, universal data quality, or correctness on an arbitrary private dataset.
+
+\section{Troubleshooting}
+
+\begin{longtable}{p{4.1cm}p{10.3cm}}
+\toprule
+Symptom & First checks\\
+\midrule
+\endhead
+Private install returns 404 & Confirm that the GitHub account has access and that the credential helper is active. Anonymous HTTP access is expected to fail.\\
+Import works in terminal but not notebook & Compare \code{sys.executable} in both contexts and select the installed kernel.\\
+Target is \code{None} & Inspect \code{target_candidates_}, confidence, margin, and alerts; pass an explicit target when the contract is known.\\
+Too few candidates & Review ID/constant/unsupported-type reasons, exclusions, and \code{max_features}.\\
+Blueprint output is not a model & This is intentional. Choose and validate an estimator separately, then fit preprocessing only on training folds.\\
+Optional profiling import fails & Install the \code{profiling} or \code{report} extra in the active environment.\\
+Results differ across machines & Freeze Python/dependencies, configuration, input hash, Git ref, and random seeds in the run record.\\
+\bottomrule
+\end{longtable}
+
+\section{Glossary}
+\begin{description}[style=nextline,leftmargin=3.2cm]
+  \item[Candidate] A feature row carrying eligibility, evidence, and a ranking signal.
+  \item[Confidence] A heuristic decision strength reported for target resolution; not a probability of truth.
+  \item[Stress] A measurable data or structural condition that may affect downstream modeling.
+  \item[Prescription] A conditional, evidence-linked action suggestion for a model family.
+  \item[Blueprint] Unfitted preprocessing source code that a user reviews and fits inside a training boundary.
+  \item[Abstention] An explicit refusal to make a weak or ambiguous target inference.
+  \item[Provenance] The record of where data, code, dependencies, and claims came from.
+\end{description}
+
+\section{Citation and version record}
+
+For internal citation, identify the distribution and Git ref rather than citing a mutable working
+directory:
+
+\begin{lstlisting}
+Guilherme Moura Fernandes. Reversede: Technical Reference and Operating Guide.
+reversede-ai 0.3.0.dev0, private GitHub repository, 2026.
+\end{lstlisting}
+
+The repository also contains \code{CITATION.cff}, \code{AUTHORS.md}, licensing and provenance notes,
+compatibility documentation, and the private installation guide. Keep those records synchronized when
+the public API or version changes.
+
+\vfill
+\begin{center}
+\color{navy}\rule{0.72\textwidth}{0.7pt}\\[0.3cm]
+\small\textcolor{muted}{End of technical reference. The source code and access policy remain private.}
+\end{center}
+
+\end{document}

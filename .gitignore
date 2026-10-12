@@ -37,6 +37,8 @@ reports/
 manuscript/
 *.pdf
 *.zip
+!docs/pdf/
+!docs/pdf/*.pdf
 
 # Secrets and local configuration
 .env

@@ -65,6 +65,14 @@ this private release intentionally uses an authenticated Git URL instead. See
 [private installation and access](docs/private_installation.md), including SSH
 and Google Colab instructions.
 
+## Technical reference PDF
+
+The complete private reference manual covers the algorithm, pseudocode, public
+API, parameters, generated blueprints, portability, reproducibility, and
+scientific boundaries: [Reversede Technical Reference and Operating Guide](docs/pdf/reversede_reference.pdf).
+The editable LaTeX source is kept at
+[`docs/latex/reversede_reference.tex`](docs/latex/reversede_reference.tex).
+
 ## Local development installation
 
 Create an isolated environment with a supported CPython version:
