@@ -1,0 +1,53 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local environments and user-specific IDE state
+.venv/
+venv/
+env/
+.idea/
+.vscode/*.local.json
+*.code-workspace.local
+
+# Packaging and generated metadata
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Temporary and generated outputs
+work/
+tmp/
+.tmp/
+reversede-report/
+*.log
+
+# Scientific/material inputs are excluded from the library tree by policy.
+# Curated synthetic notebooks under notebooks/ are intentionally versioned.
+data/
+artifacts/
+reports/
+manuscript/
+*.pdf
+*.zip
+
+# Secrets and local configuration
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+credentials*
+secrets*
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini

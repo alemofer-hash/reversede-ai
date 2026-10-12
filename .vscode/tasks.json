@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Reversede: verify",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["scripts/verify_install.py"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Reversede: pytest",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "-ra"],
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

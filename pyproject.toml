@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reversede-ai"
+version = "0.3.0.dev0"
+description = "Auditable DataFrame profiling, stress diagnostics, prescriptions, and sklearn blueprints."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Guilherme Moura Fernandes"}]
+dependencies = ["numpy>=1.26", "pandas>=2.1"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+sklearn = ["scikit-learn>=1.4"]
+ml = ["scikit-learn>=1.4"]
+profiling = ["ydata-profiling==4.18.4", "setuptools<81"]
+report = ["ydata-profiling==4.18.4", "setuptools<81"]
+analysis = ["matplotlib>=3.8", "scipy>=1.11", "seaborn>=0.13", "scikit-learn>=1.4"]
+notebook = ["jupyterlab>=4", "ipykernel>=6", "scikit-learn>=1.4"]
+test = ["pytest>=8"]
+dev = [
+  "build>=1.2",
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.8",
+  "twine>=6",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [
+  ".venv",
+  "artifacts",
+  "data",
+  "dist",
+  "manuscript",
+  "reports",
+  "work",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.coverage.run]
+source = ["reversede", "reverseda_ai"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

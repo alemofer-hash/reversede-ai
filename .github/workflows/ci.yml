@@ -1,0 +1,89 @@
+name: private-library-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: tests-${{ matrix.os }}-py${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install test environment
+        run: python -m pip install ".[test,sklearn]"
+      - name: Run tests
+        run: python -m pytest -ra
+
+  quality-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install development environment
+        run: python -m pip install ".[dev,sklearn]"
+      - name: Lint and format
+        run: |
+          ruff check src tests examples scripts
+          ruff format --check src tests examples scripts
+      - name: Validate portable assets
+        run: python scripts/validate_portable_assets.py
+      - name: Test with coverage
+        run: python -m pytest --cov=reversede --cov=reverseda_ai --cov-report=term-missing
+      - name: Build distributions
+        run: python -m build
+      - name: Validate metadata
+        run: python -m twine check dist/*
+      - name: Audit wheel contents
+        run: python -m zipfile --list dist/*.whl
+
+  notebook-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install notebook environment
+        run: python -m pip install ".[notebook]"
+      - name: Execute synthetic quickstart notebook
+        run: >-
+          jupyter nbconvert --to notebook --execute notebooks/01_quickstart.ipynb
+          --output-dir "${{ runner.temp }}" --ExecutePreprocessor.timeout=180
+
+  core-only-smoke:
+    name: core-only-${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install core only
+        run: python -m pip install .
+      - name: Run core import and analysis
+        run: >-
+          python -c "import pandas as pd; from reversede import Reversede;
+          r=Reversede(pd.DataFrame({'target':[1.,2.,3.],'x':[2.,4.,6.]}),
+          target='target',task='regression'); print(r.selected_features_)"
+
+# This workflow contains no publish, upload, release, or remote-creation step.

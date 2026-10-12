@@ -1,0 +1,3 @@
+# Runtime dependencies for environments that install from a local checkout.
+numpy>=1.26
+pandas>=2.1

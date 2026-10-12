@@ -1,0 +1,6 @@
+-r notebook.txt
+build>=1.2
+pytest>=8
+pytest-cov>=5
+ruff>=0.8
+twine>=6

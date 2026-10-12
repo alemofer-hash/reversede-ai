@@ -1,0 +1,4 @@
+-r core.txt
+scikit-learn>=1.4
+jupyterlab>=4
+ipykernel>=6

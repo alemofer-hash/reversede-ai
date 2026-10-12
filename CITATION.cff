@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use Reversede, cite this software metadata record."
+title: "Reversede"
+type: software
+version: 0.3.0.dev0
+authors:
+  - family-names: "Fernandes"
+    given-names: "Guilherme Moura"
+license: MIT
+abstract: "Auditable DataFrame profiling, stress diagnostics, prescriptions, and sklearn blueprints."
+keywords:
+  - exploratory data analysis
+  - feature engineering
+  - reproducible machine learning
